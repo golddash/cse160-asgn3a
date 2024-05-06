@@ -20,6 +20,8 @@ var FSHADER_SOURCE = `
   uniform vec4 u_FragColor;
   varying vec2 v_UV;
   uniform sampler2D u_Sampler0;
+  uniform sampler2D u_Sampler1;
+  uniform sampler2D u_Sampler2;
   uniform int u_whichTexture;
   void main() {
     if (u_whichTexture == -2) {
@@ -30,7 +32,14 @@ var FSHADER_SOURCE = `
     }
     else if (u_whichTexture == 0) {
       gl_FragColor = texture2D(u_Sampler0, v_UV);
-    } else {
+    } 
+    else if (u_whichTexture == 1) {
+      gl_FragColor = texture2D(u_Sampler1, v_UV);
+    } 
+    else if (u_whichTexture == 2) {
+      gl_FragColor = texture2D(u_Sampler2, v_UV);
+    } 
+    else {
       gl_FragColor = vec4(1, 0.2, 0.2, 1.0);
     }
     
@@ -66,6 +75,8 @@ let a_UV;
 let u_ProjectionMatrix;
 let u_ViewMatrix;
 let u_Sampler0;
+let u_Sampler1;
+let u_Sampler2;
 let u_whichTexture;
 
 function setupWebGL() {
@@ -139,6 +150,18 @@ function connectVariablesToGLSL() {
   u_Sampler0 = gl.getUniformLocation(gl.program, "u_Sampler0");
   if (!u_Sampler0) {
     console.log("Failed to get the storage location of u_Sampler0");
+    return;
+  }
+
+  u_Sampler1 = gl.getUniformLocation(gl.program, "u_Sampler1");
+  if (!u_Sampler1) {
+    console.log("Failed to get the storage location of u_Sampler1");
+    return;
+  }
+
+  u_Sampler2 = gl.getUniformLocation(gl.program, "u_Sampler2");
+  if (!u_Sampler2) {
+    console.log("Failed to get the storage location of u_Sampler2");
     return;
   }
 
@@ -300,16 +323,16 @@ function addActionsForHtmlUI() {
     }
   });
 
-  canvas.addEventListener('mousemove', function(ev) {
-    // Calculate rotation angles based on mouse position
-    let xRotation = ev.clientY / canvas.height * 360; // Map y-position to x-rotation (X-axis)
-    let yRotation = ev.clientX / canvas.width * 360; // Map x-position to y-rotation (Y-axis)
+  // canvas.addEventListener('mousemove', function(ev) {
+  //   // Calculate rotation angles based on mouse position
+  //   let xRotation = ev.clientY / canvas.height * 360; // Map y-position to x-rotation (X-axis)
+  //   let yRotation = ev.clientX / canvas.width * 360; // Map x-position to y-rotation (Y-axis)
     
-    // Update global rotation angles
-    g_globalAngle = yRotation; // X-axis rotation
-    g_globalAngleX = xRotation; // Y-axis rotation
-    g_globalAngleZ = 0; // Z-axis rotation (assuming Z-axis rotation is not controlled by mouse)
-  });
+  //   // Update global rotation angles
+  //   g_globalAngle = yRotation; // X-axis rotation
+  //   g_globalAngleX = xRotation; // Y-axis rotation
+  //   g_globalAngleZ = 0; // Z-axis rotation (assuming Z-axis rotation is not controlled by mouse)
+  // });
 
   document.getElementById("resetButton").addEventListener("click", function() {
     // Reset global angle variables to initial values
@@ -322,21 +345,47 @@ function addActionsForHtmlUI() {
 }
 
 function initTextures() {
-  var image = new Image();
-  if (!image) {
-    console.log("Failed to create the image object");
+
+  // image 0
+  var image0 = new Image();
+  if (!image0) {
+    console.log("Failed to create the image 0 object");
     return false;
   }
 
-  image.onload = function() {sendImageToTEXTURE0 (image); };
-  image.src = "../images/car.jpg";
-
+  image0.onload = function() {sendImageToTEXTURE0 (image0, 0, u_Sampler0); };
+  image0.src = "../images/car.jpg";
   console.log('created image0');
+
+ // image 1
+  var image1 = new Image();
+  if (!image1) {
+    console.log("Failed to create the image 1 object");
+    return false;
+  }
+
+  image1.onload = function() {sendImageToTEXTURE0 (image1, 1, u_Sampler1); };
+  image1.src = "../images/grass.png";
+  console.log('created image1');
+
+  // image 2
+
+  var image2 = new Image();
+  if (!image2) {
+    console.log("Failed to create the image 2 object");
+    return false;
+  }
+
+  image2.onload = function() {sendImageToTEXTURE0 (image2, 2, u_Sampler2); };
+  image2.src = "../images/cloud.png";
+  console.log('created image2');
+
+
 
   return true;
 }
 
-function sendImageToTEXTURE0 (image) {
+function sendImageToTEXTURE0 (image, n, u_Sampler) {
   var texture = gl.createTexture();
   if (!texture) {
     console.log("Failed to create the texture object");
@@ -344,15 +393,27 @@ function sendImageToTEXTURE0 (image) {
   
   }
 
+
   gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
-  gl.activeTexture(gl.TEXTURE0);
+
+  switch (n) {
+    case 0:
+      gl.activeTexture(gl.TEXTURE0);
+      break;
+    case 1:
+      gl.activeTexture(gl.TEXTURE1);
+      break;
+    case 2:
+      gl.activeTexture(gl.TEXTURE2);
+      break;
+  }
+  //gl.activeTexture(gl.TEXTURE0);
   gl.bindTexture(gl.TEXTURE_2D, texture);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, image);
-  gl.uniform1i(u_Sampler0, 0);
+  gl.uniform1i(u_Sampler, n);
   console.log('finished loadTexture');
 }
-
 
 
 
@@ -368,11 +429,14 @@ function main() {
   canvas.onmousedown = click;
 
   // Drag mouse to draw
-  canvas.onmousemove = function (ev) {
-    if (ev.buttons == 1) {
-      click(ev);
-    }
-  };
+  // canvas.onmousemove = function (ev) {
+  //   if (ev.buttons == 1) {
+  //     click(ev);
+  //   }
+  // };
+
+  document.onkeydown = keydown;
+
 
   initTextures();
 
@@ -462,6 +526,31 @@ function updateAnimationAngles()
   
 }
 
+function keydown(ev) {
+  if (ev.keyCode == 68) { // Right arrow
+    g_eye[0] += 0.2; // Move right along the x-axis
+}
+
+if (ev.keyCode == 65) { // Left arrow
+    g_eye[0] -= 0.2; // Move left along the x-axis
+}
+
+if (ev.keyCode == 87) { // W key
+    g_eye[2] += 0.2; // Move up along the y-axis
+}
+
+if (ev.keyCode == 83) { // S key
+    g_eye[2] -= 0.2; // Move down along the y-axis
+}
+
+  renderAllShapes();
+  console.log(ev.keyCode);
+}
+
+var g_eye=[0,0,-1];
+var g_at=[0,0,0];
+var g_up=[0,1,0];
+
 
 function renderAllShapes() {
   var startTime = performance.now();
@@ -471,7 +560,8 @@ function renderAllShapes() {
   gl.uniformMatrix4fv(u_ProjectionMatrix, false, projMat.elements);
 
   var viewMat = new Matrix4();
-  viewMat.setLookAt(0,0,-1, 0,0,0, 0,1,0);
+  viewMat.setLookAt(g_eye[0], g_eye[1], g_eye[2], g_at[0], g_at[1], g_at[2], g_up[0], g_up[1], g_up[2]);
+  //viewMat.setLookAt(0,0,-1, 0,0,0, 0,1,0);
   gl.uniformMatrix4fv(u_ViewMatrix, false, viewMat.elements);
 
   var globalRotMat = new Matrix4().rotate(g_globalAngle, 0, 1, 0);
@@ -487,6 +577,23 @@ function renderAllShapes() {
   // Clear <canvas>
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
   gl.clear(gl.COLOR_BUFFER_BIT);
+
+
+  var ground = new Cube();
+  ground.color = [1.0, 0.0, 0.0, 1.0];
+  ground.textureNum = 1;
+  ground.matrix.translate(0, -0.75, 0);
+  ground.matrix.scale(10, 0.0, 10);
+  ground.matrix.translate(-0.5, 0, -0.5);
+  ground.render();
+
+  var sky = new Cube();
+  sky.color = [1.0, 0.0, 0.0, 1.0];
+  sky.textureNum = 2;
+  sky.matrix.scale(50,50,50);
+  sky.matrix.translate(-0.5, -0.5, -0.5);
+  sky.render();
+
 
   // Back of Fox Body
   var foxBack = new Cube();
@@ -513,7 +620,7 @@ function renderAllShapes() {
   // Head of Fox
   var foxHead = new Cube();
   foxHead.color = [0.6,0.3,0.1,1];
-  // foxHead.textureNum = 2;
+  foxHead.textureNum = 100;
   foxHead.matrix = attachHead;
   foxHead.matrix.translate(0, .70, -0.05);
   foxHead.matrix.rotate(0, 0, 0, 1);
