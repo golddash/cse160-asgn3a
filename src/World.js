@@ -77,7 +77,9 @@ let u_ViewMatrix;
 let u_Sampler0;
 let u_Sampler1;
 let u_Sampler2;
+//let u_Sampler3;
 let u_whichTexture;
+
 
 function setupWebGL() {
   // Retrieve <canvas> element
@@ -211,6 +213,8 @@ g_rightEarAnimation = false;
 
 g_globalAngleX = 0;
 g_globalAngleZ = 0;
+
+
 
 function addActionsForHtmlUI() {
   // Camera angle
@@ -365,7 +369,7 @@ function initTextures() {
   }
 
   image1.onload = function() {sendImageToTEXTURE0 (image1, 1, u_Sampler1); };
-  image1.src = "../images/grass.png";
+  image1.src = "../images/dark-wood-2048.jpg";
   console.log('created image1');
 
   // image 2
@@ -377,7 +381,7 @@ function initTextures() {
   }
 
   image2.onload = function() {sendImageToTEXTURE0 (image2, 2, u_Sampler2); };
-  image2.src = "../images/cloud.png";
+  image2.src = "../images/comet-1024.jpg";
   console.log('created image2');
 
 
@@ -434,6 +438,8 @@ function main() {
   //     click(ev);
   //   }
   // };
+
+  g_camera = new Camera();
 
   document.onkeydown = keydown;
 
@@ -527,22 +533,24 @@ function updateAnimationAngles()
 }
 
 function keydown(ev) {
-  if (ev.keyCode == 68) { // Right arrow
-    g_eye[0] += 0.2; // Move right along the x-axis
+  if (ev.keyCode == 68) {
+    g_camera.eye.elements[0] += 0.2;
 }
-
-if (ev.keyCode == 65) { // Left arrow
-    g_eye[0] -= 0.2; // Move left along the x-axis
+else if (ev.keyCode == 65) {
+    g_camera.eye.elements[0] -= 0.2;
 }
-
-if (ev.keyCode == 87) { // W key
-    g_eye[2] += 0.2; // Move up along the y-axis
+else if (ev.keyCode == 87) {
+    g_camera.forward();
 }
-
-if (ev.keyCode == 83) { // S key
-    g_eye[2] -= 0.2; // Move down along the y-axis
+else if (ev.keyCode == 83) {
+    g_camera.back();
 }
-
+else if (ev.keyCode == 81) {
+    g_camera.panLeft();
+}
+else if (ev.keyCode == 69) {
+    g_camera.panRight();
+}
   renderAllShapes();
   console.log(ev.keyCode);
 }
@@ -550,6 +558,31 @@ if (ev.keyCode == 83) { // S key
 var g_eye=[0,0,-1];
 var g_at=[0,0,0];
 var g_up=[0,1,0];
+
+var g_map = [
+[1,1,1,1,1,1,1,1],
+[1,0,0,0,0,0,0,1],
+[1,0,0,0,0,0,0,1],
+[1,0,0,1,1,0,0,1],
+[1,0,0,0,0,0,0,1],
+[1,0,0,1,1,0,0,1],
+[1,0,1,0,0,1,0,1],
+[1,0,0,0,0,0,0,1],
+];
+
+function drawMap() {
+  for (x=0; x < 8; x++) {
+    for (y=0; y < 8; y++) {
+      if (g_map[x][y]==1) {
+        var body = new Cube();
+        body.color = [1.0, 1.0, 1.0, 1.0];
+        body.matrix.translate(x-4, -0.75, y-4);
+        body.matrix.scale(1, 3, 1);
+        body.render();
+      }
+    }
+  }
+}
 
 
 function renderAllShapes() {
@@ -560,8 +593,12 @@ function renderAllShapes() {
   gl.uniformMatrix4fv(u_ProjectionMatrix, false, projMat.elements);
 
   var viewMat = new Matrix4();
-  viewMat.setLookAt(g_eye[0], g_eye[1], g_eye[2], g_at[0], g_at[1], g_at[2], g_up[0], g_up[1], g_up[2]);
-  //viewMat.setLookAt(0,0,-1, 0,0,0, 0,1,0);
+
+  viewMat.setLookAt(
+    g_camera.eye.elements[0], g_camera.eye.elements[1], g_camera.eye.elements[2],
+    g_camera.at.elements[0], g_camera.at.elements[1], g_camera.at.elements[2],
+    g_camera.up.elements[0], g_camera.up.elements[1], g_camera.up.elements[2]);
+  //viewMat.setLookAt(g_eye[0], g_eye[1], g_eye[2], g_at[0], g_at[1], g_at[2], g_up[0], g_up[1], g_up[2]);
   gl.uniformMatrix4fv(u_ViewMatrix, false, viewMat.elements);
 
   var globalRotMat = new Matrix4().rotate(g_globalAngle, 0, 1, 0);
@@ -594,6 +631,7 @@ function renderAllShapes() {
   sky.matrix.translate(-0.5, -0.5, -0.5);
   sky.render();
 
+  drawMap();
 
   // Back of Fox Body
   var foxBack = new Cube();
