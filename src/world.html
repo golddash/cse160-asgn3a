@@ -4,13 +4,27 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Document</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.0/css/bulma.min.css">
+    <style>
+      #canvasContainer {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          
+      }
+
+  </style>
   </head>
   <body onload="main()">
-    <canvas id="webgl" width="400" height="400">
+    <!-- <canvas id="webgl" width="400" height="400">
       Use a browser that supports canvas
-    </canvas>
+    </canvas> -->
 
-    <br />
+    <div id="canvasContainer">
+      <canvas id="webgl" width="1000" height="500">
+          Use a browser that supports canvas
+      </canvas>
+  </div>
 
     <p id="theFPS">XXX</p>
     <p>This is a Fox</p> 
@@ -75,9 +89,7 @@
     <button type="button" id="leftEarOn">ON</button>
     <button type="button" id="leftEarOff">OFF</button>
 
-    <p>NOTE: You have to left click on the black canvas first for animations to work. That is because I programmed it to render when clicked on canvas.</p>
-    <p>If it still doesn't work, try refreshing the browser or using a different browser (chrome, opera, edge, etc.) then left clicking the black canvas. Please let me know if it doesn't work still because it should.</p>
-
+  
 <br><br>
 
     <script src="Point.js"></script>

@@ -69,4 +69,26 @@ class Camera {
         const rotatedVector = rotationMatrix.multiplyVector3(forwardVector);
         this.at = rotatedVector.add(this.eye);
     }
+
+    rotateX(angle) {
+        const forwardVector = new Vector3();
+        forwardVector.set(this.at);
+        forwardVector.sub(this.eye);
+        const rotationMatrix = new Matrix4();
+        rotationMatrix.setIdentity();
+        rotationMatrix.setRotate(angle, 1, 0, 0); // Rotate around the X-axis
+        const rotatedVector = rotationMatrix.multiplyVector3(forwardVector);
+        this.at = rotatedVector.add(this.eye);
+    }
+
+    rotateY(angle) {
+        const forwardVector = new Vector3();
+        forwardVector.set(this.at);
+        forwardVector.sub(this.eye);
+        const rotationMatrix = new Matrix4();
+        rotationMatrix.setIdentity();
+        rotationMatrix.setRotate(angle, 0, 1, 0); // Rotate around the Y-axis
+        const rotatedVector = rotationMatrix.multiplyVector3(forwardVector);
+        this.at = rotatedVector.add(this.eye);
+    }
 }

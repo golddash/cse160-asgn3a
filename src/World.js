@@ -23,6 +23,7 @@ var FSHADER_SOURCE = `
   uniform sampler2D u_Sampler1;
   uniform sampler2D u_Sampler2;
   uniform sampler2D u_Sampler3;
+  uniform sampler2D u_Sampler4;
   uniform int u_whichTexture;
   void main() {
     if (u_whichTexture == -2) {
@@ -42,6 +43,9 @@ var FSHADER_SOURCE = `
     } 
     else if (u_whichTexture == 3) {
       gl_FragColor = texture2D(u_Sampler3, v_UV);
+    }
+    else if (u_whichTexture == 4) {
+      gl_FragColor = texture2D(u_Sampler4, v_UV);
     } 
     else {
       gl_FragColor = vec4(1, 0.2, 0.2, 1.0);
@@ -82,7 +86,9 @@ let u_Sampler0;
 let u_Sampler1;
 let u_Sampler2;
 let u_Sampler3;
+let u_Sampler4;
 let u_whichTexture;
+
 
 
 function setupWebGL() {
@@ -177,6 +183,12 @@ function connectVariablesToGLSL() {
     return;
   }
 
+  u_Sampler4 = gl.getUniformLocation(gl.program, "u_Sampler4");
+  if (!u_Sampler4) {
+    console.log("Failed to get the storage location of u_Sampler4");
+    return;
+  }
+
   u_whichTexture = gl.getUniformLocation(gl.program, "u_whichTexture");
   if (!u_whichTexture) {
     console.log("Failed to get the storage location of u_whichTexture");
@@ -225,6 +237,8 @@ g_globalAngleX = 0;
 g_globalAngleZ = 0;
 
 
+let oldMouseX = 0;
+let oldMouseY = 0;
 
 function addActionsForHtmlUI() {
   // Camera angle
@@ -348,6 +362,20 @@ function addActionsForHtmlUI() {
   //   g_globalAngleZ = 0; // Z-axis rotation (assuming Z-axis rotation is not controlled by mouse)
   // });
 
+
+  //document.addEventListener('mousemove', onMove);
+
+  document.getElementById("webgl").addEventListener('mousemove', function(event) {
+    const canvasRect = document.getElementById("webgl").getBoundingClientRect();
+    const mouseX = event.clientX - canvasRect.left;
+    const mouseY = event.clientY - canvasRect.top;
+
+    if (mouseX >= 0 && mouseX <= canvasRect.width && mouseY >= 0 && mouseY <= canvasRect.height) {
+        onMove(event);
+    }
+});
+
+
   document.getElementById("resetButton").addEventListener("click", function() {
     // Reset global angle variables to initial values
     g_globalAngle = 0;
@@ -357,6 +385,22 @@ function addActionsForHtmlUI() {
 });
 
 }
+
+
+function onMove(event) {
+  // Calculate the change in mouse position
+  const deltaX = event.clientX - oldMouseX;
+  const deltaY = event.clientY - oldMouseY;
+
+  // Adjust rotation based on mouse movement
+  g_camera.rotateY(-deltaX * 0.5); // Adjusting rotateY based on X movement
+  g_camera.rotateX(-deltaY * 0.3); // Adjusting rotateX based on Y movement
+
+  // Update old mouse position
+  oldMouseX = event.clientX;
+  oldMouseY = event.clientY;
+}
+
 
 function initTextures() {
 
@@ -406,6 +450,18 @@ function initTextures() {
   image3.src = "../images/hardwood-1024.jpg";
   console.log('created image3');
 
+
+  // image 4
+
+  var image4 = new Image();
+  if (!image4) {
+    console.log("Failed to create the image 4 object");
+    return false;
+  }
+
+  image4.onload = function() {sendImageToTEXTURE0 (image4, 4, u_Sampler4); };
+  image4.src = "../images/leaves-1024.jpg";
+  console.log('created image4');
   return true;
 }
 
@@ -433,6 +489,9 @@ function sendImageToTEXTURE0 (image, n, u_Sampler) {
     case 3:
       gl.activeTexture(gl.TEXTURE3);
       break;
+    case 4:
+      gl.activeTexture(gl.TEXTURE4);
+      break;
   }
   //gl.activeTexture(gl.TEXTURE0);
   gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -442,7 +501,7 @@ function sendImageToTEXTURE0 (image, n, u_Sampler) {
   console.log('finished loadTexture');
 }
 
-
+let clickDown=false;
 
 
 function main() {
@@ -465,6 +524,8 @@ function main() {
   g_camera = new Camera();
 
   document.onkeydown = keydown;
+
+
 
 
   initTextures();
@@ -582,86 +643,6 @@ var g_eye=[0,0,-1];
 var g_at=[0,0,0];
 var g_up=[0,1,0];
 
-// var g_map = [
-// [1,1,1,1,1,1,1,1],
-// [1,0,0,0,0,0,0,1],
-// [1,0,0,0,0,0,0,1],
-// [1,0,0,1,1,0,0,1],
-// [0,0,0,0,0,0,0,0],
-// [1,0,0,1,1,0,0,1],
-// [1,0,1,0,0,1,0,1],
-// [1,0,0,0,0,0,0,1],
-// ];
-
-// var g_map = [
-//   [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-//   [1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-//   [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-//   [1,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1],
-//   [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-//   [1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1],
-//   [1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1],
-//   [1,0,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,0,1],
-//   [1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,1],
-//   [1,0,1,0,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,0,1,0,1],
-//   [1,0,1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,1,0,1],
-//   [1,0,1,0,1,0,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,0,1,0,1,0,1,1],
-//   [1,0,1,0,1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,1,0,0,1],
-//   [1,0,1,0,1,0,1,0,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,0,1,0,1,0,0,1],
-//   [1,0,1,0,1,0,1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,1,1,1,1],
-//   [1,0,1,0,1,0,1,0,1,0,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,0,0,0,0,0],
-//   [1,0,1,0,1,0,1,0,1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,1,0,0],
-//   [1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1,1,1,1,1,1,1,1,1,1,0,1,0,0,0,0,1],
-//   [1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,0,0,0,0,0,0,0,0,1,0,1,1,1,0,1,1],
-//   [1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1,1,1,1,1,1,0,1,0,0,0,0,0,0,1],
-//   [1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,0,0,0,0,1,0,1,1,1,1,1,1,1,1],
-//   [1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1,1,0,1,0,1,0,0,0,0,0,0,1],
-//   [1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1,1,1,0,1],
-//   [1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,0,1,0,1],
-//   [1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1,0,1],
-//   [1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,0,1],
-//   [1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1],
-//   [1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,0,1],
-//   [1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1],
-//   [1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,0,1],
-//   [1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1],
-//   [1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,0,1],  
-//   ]
-
-// var g_map = [
-//   [5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5],
-//   [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-//   [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-//   [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-//   [1,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,1,1,1,0,0,1],
-//   [1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,0,1],
-//   [1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,0,1],
-//   [1,0,0,0,0,0,1,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,1,0,1,0,0,1],
-//   [1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1,0,1,0,0,1],
-//   [1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1,0,1,0,0,1],
-//   [1,1,1,1,1,1,1,0,0,0,1,1,1,1,1,0,0,0,1,1,1,1,1,0,0,0,1,0,1,0,0,1],
-//   [1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0,1],
-//   [1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0,1],
-//   [1,0,0,1,1,1,1,0,0,0,1,0,3,3,3,3,3,3,3,3,0,0,1,0,0,0,1,0,0,0,0,1],
-//   [1,0,0,1,0,0,1,0,0,0,1,0,3,0,0,0,0,0,0,3,0,0,1,0,0,0,1,1,1,1,1,1],
-//   [1,0,0,1,0,0,1,0,0,0,1,0,3,0,0,0,0,0,0,3,0,0,1,0,0,0,0,0,0,0,0,0],
-//   [1,0,0,1,0,0,1,0,0,0,1,0,3,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0],
-//   [1,0,0,0,0,0,1,0,0,0,1,0,3,0,0,0,0,0,0,3,0,0,1,0,0,0,0,0,0,0,0,0],
-//   [1,0,0,0,0,0,1,0,0,0,1,0,3,0,0,0,0,0,0,3,0,0,1,0,0,0,0,1,0,0,0,1],
-//   [1,0,0,0,0,0,1,0,0,0,1,0,3,3,3,3,3,3,3,3,0,0,1,0,0,0,0,1,0,0,0,1],
-//   [1,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1,0,0,0,1],
-//   [1,0,0,1,1,1,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1,0,0,0,1],
-//   [1,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,1,0,0,0,1],
-//   [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1,0,0,0,1],
-//   [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1,0,0,0,1],
-//   [1,0,0,0,1,1,1,1,1,1,1,1,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1,0,0,0,1],
-//   [1,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1,0,0,0,1],
-//   [1,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,0,0,0,1],
-//   [1,0,0,0,1,1,1,1,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-//   [1,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-//   [1,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-//   [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-// ]
 
 var g_map = [
   [5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5],
@@ -699,43 +680,40 @@ var g_map = [
 ];
 
 
-//[5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5],
-
-
-
-//            Left 
-//  Front [1,1,1,1,1,1,1,1] Back
-//            Right
-
 // function drawMap() {
-//   for (x=0; x < 32; x++) {
-//     for (y=0; y < 32; y++) {
-//       if (g_map[x][y]==1) {
-//         var body = new Cube();
-//         body.color = [1.0, 1.0, 1.0, 1.0];
-//         body.textureNum = 3;
-//         body.matrix.translate(x-16.5, -0.75, y-17);
-//         body.matrix.scale(1, 3, 1);
-//         body.renderfast();
+//     for (var x=0; x < g_map.length; x++) {
+//       for (var y=0; y < g_map.length; y++) {
+//         var height = g_map[x][y];
+//         for (var z=0; z < height; z++) {
+//           var body = new Cube();
+//           body.color = [1.0, 1.0, 1.0, 1.0];
+//           body.textureNum = 3;
+//           body.matrix.translate(x-(g_map.length/2), z-0.75, y-(g_map[x].length/2));
+//           body.matrix.scale(1, 1, 1);
+//           body.renderfast();
 //       }
 //     }
 //   }
 // }
 
 function drawMap() {
-  for (var x=0; x < g_map.length; x++) {
-    for (var y=0; y < g_map.length; y++) {
-      var height = g_map[x][y];
-      for (var z=0; z < height; z++) {
-        var body = new Cube();
-        body.color = [1.0, 1.0, 1.0, 1.0];
-        body.textureNum = 3;
-        body.matrix.translate(x-(g_map.length/2), z-0.75, y-(g_map[x].length/2));
-        body.matrix.scale(1, 1, 1);
-        body.renderfast();
-    }
+  for (var x = 0; x < g_map.length; x++) {
+      for (var y = 0; y < g_map[x].length; y++) { // Fixed g_map[x].length
+          var height = g_map[x][y];
+          for (var z = 0; z < height; z++) {
+              var body = new Cube();
+              body.color = [1.0, 1.0, 1.0, 1.0];
+              if (height <= 3) {
+                  body.textureNum = 3;
+              } else {
+                  body.textureNum = 4;
+              }
+              body.matrix.translate(x - (g_map.length / 2), z - 0.75, y - (g_map[x].length / 2));
+              body.matrix.scale(1, 1, 1);
+              body.renderfast();
+          }
+      }
   }
-}
 }
 
 
@@ -774,7 +752,7 @@ function renderAllShapes() {
   ground.color = [1.0, 0.0, 0.0, 1.0];
   ground.textureNum = 1;
   ground.matrix.translate(0, -0.75, 0);
-  ground.matrix.scale(40, -0.5, 40);
+  ground.matrix.scale(40, -1, 40);
   ground.matrix.translate(-0.5, 0, -0.5);
   ground.render();
 
